@@ -1,0 +1,28 @@
+var m,n,r,q;
+{计算m和n的最大公倍数}
+procedure gcd; ^
+    begin
+        while r#0 do
+            begin
+                q := m/n;
+                r := m-q*n;
+                m := n;
+                n := r;
+            end
+        end;
+begin
+    read(m);
+    read(n);
+    {为了方便，规定m>=n}
+    if m<n then
+        begin  
+            r:= m ; 
+            m := n;
+            n:= r;
+        end;
+    begin
+        r:=1;
+        call gcd;
+        write(m);
+    end;
+end.
