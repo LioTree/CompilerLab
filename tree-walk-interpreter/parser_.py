@@ -133,7 +133,7 @@ class Parser:
 
         body = self.statement()
         if increment != None:
-            body = stmt.Block([body,stmt.Exression(increment)])
+            body = stmt.Block([body,stmt.Expression(increment)])
         if condition == None:
             conditon = expr.Literal(True)
         body = stmt.While(condition,body)
@@ -152,7 +152,7 @@ class Parser:
     def expressionStatement(self):
         exp = self.expression()
         self.consume(TokenType.SEMICOLON,"Expect ';' after expression.")
-        return stmt.Exression(exp)
+        return stmt.Expression(exp)
 
     def function(self,kind):
         name = self.consume(TokenType.IDENTIFIER,"Expect " + kind + " name.")

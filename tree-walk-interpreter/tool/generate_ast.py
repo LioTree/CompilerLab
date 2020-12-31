@@ -22,7 +22,7 @@ class Stmt(metaclass=ABCMeta):
         # 'Grouping':['expression'],
         # 'Literal':['value'],
         # 'Unary':['operator','right']
-        # 'Exression':['expression'],
+        # 'Expression':['expression'],
         # 'Print':['expression']
         # 'Var':['name','initializer'],
         # 'Variable':['name']

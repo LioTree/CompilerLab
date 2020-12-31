@@ -6,7 +6,7 @@ class Stmt():
         meth = getattr(visitor, methname, None)
         return meth(self)
 
-class Exression(Stmt):
+class Expression(Stmt):
     def __init__(self,expression):
         self.expression=expression
 
@@ -47,7 +47,7 @@ class Return(Stmt):
 
 class Visitor(metaclass=ABCMeta):
     @abstractmethod
-    def visitExressionStmt(self,statement):
+    def visitExpressionStmt(self,statement):
         pass
 
     @abstractmethod
