@@ -2,4 +2,4 @@
 
 时间精力有限基本就是抄了一遍...
 
-还剩Resolving and Binding,Classes,Inheritance三章
+还剩Classes,Inheritance两章
