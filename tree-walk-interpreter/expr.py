@@ -68,9 +68,16 @@ class Set(Expr):
         self.name = name
         self.value = value
 
+
 class This(Expr):
-    def __init__(self,keyword):
-        self.keyword=keyword
+    def __init__(self, keyword):
+        self.keyword = keyword
+
+
+class Super(Expr):
+    def __init__(self, keyword, method):
+        self.keyword = keyword
+        self.method = method
 
 
 class Visitor(metaclass=ABCMeta):
@@ -115,5 +122,9 @@ class Visitor(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def visitThisExpr(self,exp):
+    def visitThisExpr(self, exp):
+        pass
+
+    @abstractmethod
+    def visitSuperExpr(self, exp):
         pass

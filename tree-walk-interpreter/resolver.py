@@ -13,7 +13,8 @@ class FunctionType(Enum):
 
 class ClassType(Enum):
     NONE = auto(),
-    CLASS = auto()
+    CLASS = auto(),
+    SUBCLASS = auto()
 
 
 class Resolver(expr.Visitor, stmt.Visitor):
@@ -34,6 +35,18 @@ class Resolver(expr.Visitor, stmt.Visitor):
         self.declare(statement.name)
         self.define(statement.name)
 
+        if statement.superclass != None and statement.name.lexeme == statement.superclass.name.lexeme:
+            raise ParseError(statement.superclass.name,
+                             "A class can't inherit from itself.")
+
+        if statement.superclass != None:
+            self.currentClass = ClassType.SUBCLASS
+            self.resolve(statement.superclass)
+
+        if statement.superclass != None:
+            self.beginScope()
+            self.scopes[len(self.scopes)-1]["super"] = True
+
         self.beginScope()
         self.scopes[len(self.scopes)-1]["this"] = True
 
@@ -44,6 +57,10 @@ class Resolver(expr.Visitor, stmt.Visitor):
             self.resolveFunction(method, declaration)
 
         self.endScope()
+
+        if statement.superclass != None:
+            self.endScope()
+
         self.currentClass = enclosingClass
 
     def visitVarStmt(self, statement):
@@ -105,7 +122,8 @@ class Resolver(expr.Visitor, stmt.Visitor):
                              "Can't return from top-level code.")
         if statement.value != None:
             if self.currentFunction == FunctionType.INITIALIZER:
-                raise ParseError(statement.keyword,"Can't return a value from an initializer.")
+                raise ParseError(statement.keyword,
+                                 "Can't return a value from an initializer.")
             self.resolve(statement.value)
 
     def visitWhileStmt(self, statement):
@@ -135,6 +153,13 @@ class Resolver(expr.Visitor, stmt.Visitor):
     def visitSetExpr(self, exp):
         self.resolve(exp.value)
         self.resolve(exp.obj)
+
+    def visitSuperExpr(self,exp):
+        if self.currentClass == ClassType.NONE:
+            raise ParseError(exp.keyword,"Can't use 'super' outside of a class.")
+        elif self.currentClass != ClassType.SUBCLASS:
+            raise ParseError(exp.keyword,"Can't use 'super' in a class with no superclass.")
+        self.resolveLocal(exp,exp.keyword)
 
     def visitThisExpr(self, exp):
         if self.currentClass == ClassType.NONE:

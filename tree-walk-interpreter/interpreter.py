@@ -153,8 +153,21 @@ class Interpreter(expr.Visitor, stmt.Visitor):
         obj.set(exp.name, value)
         return value
 
+    def visitSuperExpr(self, exp):
+        distance = self.locals.get(exp)
+        superclass = self.environment.getAt(distance, "super")
+
+        obj = self.environment.getAt(distance-1, "this")
+
+        method = superclass.findMethod(exp.method.lexeme)
+
+        if method == None:
+            raise RuntimeError_(exp.method,"Undefined property '" + exp.method.lexeme + "'.")
+
+        return method.bind(obj)
+
     def visitThisExpr(self, exp):
-        return self.lookUpVariable(exp.keyword,exp)
+        return self.lookUpVariable(exp.keyword, exp)
 
     def visitCallExpr(self, exp):
         callee = self.evaluate(exp.callee)
@@ -181,17 +194,32 @@ class Interpreter(expr.Visitor, stmt.Visitor):
         self.executeBlock(statement.statements, Environment(self.environment))
 
     def visitClassStmt(self, statement):
+        superclass = None
+        if statement.superclass != None:
+            superclass = self.evaluate(statement.superclass)
+            if not isinstance(superclass, Class_):
+                raise RuntimeError_(statement.superclass.name,
+                                    "Superclass must be a class.")
+
         self.environment.define(statement.name.lexeme, None)
+
+        if statement.superclass != None:
+            self.environment = Environment(self.environment)
+            self.environment.define("super", superclass)
 
         methods = {}
         for method in statement.methods:
-            function = Function(method,self.environment,method.name.lexeme=="init")
+            function = Function(method, self.environment,
+                                method.name.lexeme == "init")
             methods[method.name.lexeme] = function
 
-        klass = Class_(statement.name.lexeme,methods)
+        klass = Class_(statement.name.lexeme, superclass, methods)
+
+        if superclass != None:
+            self.environment = self.environment.enclosing
+
         self.environment.assign(statement.name, klass)
 
-        
     def visitIfStmt(self, statement):
         if self.isTruthy(self.evaluate(statement.condition)):
             self.execute(statement.thenBranch)
@@ -204,7 +232,7 @@ class Interpreter(expr.Visitor, stmt.Visitor):
 
     def visitFunctionStmt(self, statement):
         # function = Function(statement, self.environment)
-        function = Function(statement,self.environment,False)
+        function = Function(statement, self.environment, False)
         self.environment.define(statement.name.lexeme, function)
 
     def visitReturnStmt(self, statement):

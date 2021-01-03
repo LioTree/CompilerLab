@@ -3,7 +3,8 @@ from instance import Instance
 
 
 class Class_(Callable_):
-    def __init__(self, name, methods):
+    def __init__(self, name, superclass, methods):
+        self.superclass = superclass
         self.name = name
         self.methods = methods
 
@@ -14,7 +15,7 @@ class Class_(Callable_):
         ins = Instance(self)
         initializer = self.findMethod("init")
         if initializer != None:
-            initializer.bind(ins).call(interpreter,arugments)
+            initializer.bind(ins).call(interpreter, arugments)
         return ins
 
     def arity(self):
@@ -24,4 +25,10 @@ class Class_(Callable_):
         return initializer.arity()
 
     def findMethod(self, name):
-        return self.methods.get(name)
+        if name in self.methods.keys():
+            return self.methods[name]
+
+        if self.superclass != None:
+            return self.superclass.findMethod(name)
+
+        return None

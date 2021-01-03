@@ -30,7 +30,8 @@ class Expr(metaclass=ABCMeta):
         # 'Class':['name','methods']
         # "Get":['obj','name']
         # "Set":['obj','name','value']
-        "This":['keyword']
+        # "This":['keyword']
+        "Super":["keyword","method"]
     }
     for name,fields in define_ast.items():
         temp = "class {}(Expr):\n".format(name)

@@ -5,15 +5,16 @@ class Expr(metaclass=ABCMeta):
     def accept(self,visitor):
       pass
 
-class This(Expr):
-    def __init__(self,keyword):
+class Super(Expr):
+    def __init__(self,keyword,method):
         self.keyword=keyword
+        self.method=method
 
     def accept(self,visitor):
-        return visitor.visitThisExpr(self)
+        return visitor.visitSuperExpr(self)
 
 class Visitor(metaclass=ABCMeta):
     @abstractmethod
-    def visitThisExpr(self,exp):
+    def visitSuperExpr(self,exp):
         pass
 
