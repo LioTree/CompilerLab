@@ -45,6 +45,11 @@ class Return(Stmt):
         self.keyword = keyword
         self.value = value
 
+class Class(Stmt):
+    def __init__(self,name,methods):
+        self.name=name
+        self.methods=methods
+
 class Visitor(metaclass=ABCMeta):
     @abstractmethod
     def visitExpressionStmt(self,statement):
@@ -68,4 +73,8 @@ class Visitor(metaclass=ABCMeta):
 
     @abstractmethod
     def visitWhileStmt(self,statement):
+        pass
+
+    @abstractmethod
+    def visitClassStmt(self,statement):
         pass

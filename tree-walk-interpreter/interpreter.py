@@ -7,6 +7,9 @@ from callable_ import Callable_
 from native_functions import Clock
 from function import Function
 from return_ import Return
+from class_ import Class_
+from instance import Instance
+import ast_printer
 
 
 class Interpreter(expr.Visitor, stmt.Visitor):
@@ -124,7 +127,7 @@ class Interpreter(expr.Visitor, stmt.Visitor):
     def visitAssignExpr(self, exp):
         value = self.evaluate(exp.value)
         # self.environment.assign(exp.name,value)
-        distance = self.locals[exp]
+        distance = self.locals.get(exp)
         if distance != None:
             self.environment.assignAt(distance, exp.name, value)
         else:
@@ -141,6 +144,18 @@ class Interpreter(expr.Visitor, stmt.Visitor):
                 return left
         return self.evaluate(exp.right)
 
+    def visitSetExpr(self, exp):
+        obj = self.evaluate(exp.obj)
+
+        if not isinstance(obj, Instance):
+            raise RuntimeError_(exp.name, "Only instances hava fields.")
+        value = self.evaluate(exp.value)
+        obj.set(exp.name, value)
+        return value
+
+    def visitThisExpr(self, exp):
+        return self.lookUpVariable(exp.keyword,exp)
+
     def visitCallExpr(self, exp):
         callee = self.evaluate(exp.callee)
         arguments = []
@@ -155,9 +170,28 @@ class Interpreter(expr.Visitor, stmt.Visitor):
                                 " arguments but got " + len(arguments) + ".")
         return function.call(self, arguments)
 
+    def visitGetExpr(self, exp):
+        obj = self.evaluate(exp.obj)
+        if isinstance(obj, Instance):
+            return obj.get(exp.name)
+
+        raise RuntimeError_(exp.name, "Only instances have properties.")
+
     def visitBlockStmt(self, statement):
         self.executeBlock(statement.statements, Environment(self.environment))
 
+    def visitClassStmt(self, statement):
+        self.environment.define(statement.name.lexeme, None)
+
+        methods = {}
+        for method in statement.methods:
+            function = Function(method,self.environment,method.name.lexeme=="init")
+            methods[method.name.lexeme] = function
+
+        klass = Class_(statement.name.lexeme,methods)
+        self.environment.assign(statement.name, klass)
+
+        
     def visitIfStmt(self, statement):
         if self.isTruthy(self.evaluate(statement.condition)):
             self.execute(statement.thenBranch)
@@ -169,7 +203,8 @@ class Interpreter(expr.Visitor, stmt.Visitor):
             self.execute(statement.body)
 
     def visitFunctionStmt(self, statement):
-        function = Function(statement, self.environment)
+        # function = Function(statement, self.environment)
+        function = Function(statement,self.environment,False)
         self.environment.define(statement.name.lexeme, function)
 
     def visitReturnStmt(self, statement):

@@ -6,7 +6,14 @@ from enum import Enum, auto
 
 class FunctionType(Enum):
     NONE = auto(),
-    FUNCTION = auto()
+    FUNCTION = auto(),
+    INITIALIZER = auto(),
+    METHOD = auto()
+
+
+class ClassType(Enum):
+    NONE = auto(),
+    CLASS = auto()
 
 
 class Resolver(expr.Visitor, stmt.Visitor):
@@ -14,17 +21,39 @@ class Resolver(expr.Visitor, stmt.Visitor):
         self.interpreter = interpreter
         self.scopes = []
         self.currentFunction = FunctionType.NONE
+        self.currentClass = ClassType.NONE
 
-    def visitBlockStmt(self, stmt):
+    def visitBlockStmt(self, statement):
         self.beginScope()
-        self.resolve(stmt.statements)
+        self.resolve(statement.statements)
         self.endScope()
+
+    def visitClassStmt(self, statement):
+        enclosingClass = self.currentClass
+        self.currentClass = ClassType.CLASS
+        self.declare(statement.name)
+        self.define(statement.name)
+
+        self.beginScope()
+        self.scopes[len(self.scopes)-1]["this"] = True
+
+        for method in statement.methods:
+            declaration = FunctionType.METHOD
+            if method.name.lexeme == "init":
+                declaration = FunctionType.INITIALIZER
+            self.resolveFunction(method, declaration)
+
+        self.endScope()
+        self.currentClass = enclosingClass
 
     def visitVarStmt(self, statement):
         self.declare(statement.name)
         if statement.name != None:
             self.resolve(statement.initializer)
         self.define(statement.name)
+
+    def visitGetExpr(self, exp):
+        self.resolve(exp.obj)
 
     def resolve(self, args):
         try:
@@ -75,6 +104,8 @@ class Resolver(expr.Visitor, stmt.Visitor):
             raise ParseError(statement.keyword,
                              "Can't return from top-level code.")
         if statement.value != None:
+            if self.currentFunction == FunctionType.INITIALIZER:
+                raise ParseError(statement.keyword,"Can't return a value from an initializer.")
             self.resolve(statement.value)
 
     def visitWhileStmt(self, statement):
@@ -100,6 +131,17 @@ class Resolver(expr.Visitor, stmt.Visitor):
     def visitLogicalExpr(self, exp):
         self.resolve(exp.left)
         self.resolve(exp.right)
+
+    def visitSetExpr(self, exp):
+        self.resolve(exp.value)
+        self.resolve(exp.obj)
+
+    def visitThisExpr(self, exp):
+        if self.currentClass == ClassType.NONE:
+            raise ParseError(
+                exp.keyword, "Can't use 'this' outside of a class.")
+
+        self.resolveLocal(exp, exp.keyword)
 
     def visitUnaryExpr(self, exp):
         self.resolve(exp.right)

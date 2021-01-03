@@ -10,7 +10,7 @@ if __name__=='__main__':
     source = ""
     expr = '''from abc import ABCMeta, abstractmethod
 
-class Stmt(metaclass=ABCMeta):
+class Expr(metaclass=ABCMeta):
     @abstractmethod
     def accept(self,visitor):
       pass
@@ -26,10 +26,14 @@ class Stmt(metaclass=ABCMeta):
         # 'Print':['expression']
         # 'Var':['name','initializer'],
         # 'Variable':['name']
-        'Assign':['name','value']
+        # 'Assign':['name','value']
+        # 'Class':['name','methods']
+        # "Get":['obj','name']
+        # "Set":['obj','name','value']
+        "This":['keyword']
     }
     for name,fields in define_ast.items():
-        temp = "class {}(Stmt):\n".format(name)
+        temp = "class {}(Expr):\n".format(name)
         temp += "    def __init__(self"
         for f in fields:
             temp += ",{}".format(f)
@@ -37,12 +41,12 @@ class Stmt(metaclass=ABCMeta):
         for f in fields:
             temp += "        self.{}={}\n".format(f,f)
         temp += "\n"
-        temp += "    def accept(self,visitor):\n        return visitor.visit{}Stmt(self)\n\n".format(name)
+        temp += "    def accept(self,visitor):\n        return visitor.visit{}Expr(self)\n\n".format(name)
         source += temp
         
     source += "class Visitor(metaclass=ABCMeta):\n"
     for name in define_ast.keys():
-        source += "    @abstractmethod\n    def visit{}Stmt(self,statement):\n        pass\n\n".format(name)
+        source += "    @abstractmethod\n    def visit{}Expr(self,exp):\n        pass\n\n".format(name)
 
     print(source)
     open(output_filename,'w').write(source)
